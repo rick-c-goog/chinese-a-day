@@ -1,6 +1,6 @@
 import os
 import json
-from google.cloud import firestore
+from google.cloud import firestore_v1
 from google.cloud import pubsub_v1
 from random import randint
 from datetime import datetime
@@ -11,7 +11,7 @@ from shared import vocab_list_service
 
 #eventbridge = boto3.client('events')
 #table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
-firestore = firestore.Client()
+firestore = firestore_v1.Client()
 publisher = pubsub_v1.PublisherClient()
 
 def function_handler(event, context):

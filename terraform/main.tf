@@ -166,6 +166,7 @@ resource "google_cloudfunctions_function" "set_daily_words_function" {
 
 #Fire Store database creation 
 resource "google_app_engine_application" "app" {
+  count=0
   project     = var.project_id
   location_id = var.region
   database_type = "CLOUD_FIRESTORE"
