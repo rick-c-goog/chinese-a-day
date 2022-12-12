@@ -83,7 +83,7 @@ resource "google_pubsub_topic" "daily_words" {
 resource "google_cloud_scheduler_job" "daily_words_schedule" {
   name        = "daily_words_schedule"
   description = "set daily words job "
-  schedule    = "0 20 * * ? *"
+  schedule    = "0 20 * * *"
   pubsub_target {
     # topic.id is the topic's full resource name.
     topic_name = google_pubsub_topic.daily_words.id
@@ -115,7 +115,7 @@ data "archive_file" "set_daily_words_archive" {
     source_dir  = "../src/set_todays_words"
     output_path = "tmp/set_todays_words.zip"
     depends_on   = [ 
-        null_resource.clean_up_set_daily_word
+        null_resource.clean_up_set_daily_words
     ]
 }
 
@@ -145,10 +145,10 @@ resource "google_cloudfunctions_function" "set_daily_words_function" {
 
     # Get the source code of the cloud function as a Zip compression
     source_archive_bucket = google_storage_bucket.function_bucket.name
-    source_archive_object = google_storage_bucket_object.bq_export_zip.name
+    source_archive_object = google_storage_bucket_object.set_daily_words_zip.name
 
     # Must match the function name in the cloud function `main.py` source code
-    entry_point           = "bq_to_gcs"
+    entry_point           = "function_handler"
     
     # 
     event_trigger {
@@ -177,6 +177,7 @@ resource "null_resource" "load_data" {
   provisioner "local-exec" {
     command = <<-EOT
     cd ../src/load_data
+    pip install -r requirements.txt
     python main.py
    EOT
   }
