@@ -1,6 +1,7 @@
 locals {
   appname = "chinese_words"
   cron_topic = "${var.project_id}-daily-words" 
+  send_daily_topic = "${var.project_id}-send-daily-words" 
 
 }
 
@@ -76,6 +77,18 @@ resource "google_pubsub_topic" "daily_words" {
 
   message_retention_duration = "86600s"
 }
+
+
+resource "google_pubsub_topic" "send_daily_words" {
+  name = local.send_daily_topic
+
+  labels = {
+    job = "send-daily-words"
+  }
+
+  message_retention_duration = "86600s"
+}
+
 
 /******************************************
 4.Create a cloud scheduler
@@ -155,7 +168,10 @@ resource "google_cloudfunctions_function" "set_daily_words_function" {
       event_type= "google.pubsub.topic.publish"
       resource= "${local.cron_topic}"
       #service= "pubsub.googleapis.com"
-   }
+    }
+    environment_variables = {
+    PROJECT_ID = var.project_id
+    }
 
     # Dependencies are automatically inferred so these lines can be deleted
     depends_on            = [

@@ -79,6 +79,6 @@ def store_words(todays_words):
             print(e)
 
 def publish_event(todays_words):
-    topic_path = publisher.topic_path(PROJECT_ID,PROJECT_ID+"-daily-words" )
+    topic_path = publisher.topic_path(PROJECT_ID,PROJECT_ID+"-send-daily-words" )
     data = json.dumps(todays_words).encode()
     publisher.publish(topic_path, data)
