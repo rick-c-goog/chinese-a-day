@@ -13,7 +13,7 @@ TABLE_NAME = "vocabulary"
 def get_words_in_list(list_id, limit=None, last_word_token=None, audio_file_key_check=False):
 
     try:
-        query_ref = firestore.collection(TABLE_NAME).where("list_id", "==", list_id).stream()
+        query_ref = firestore.collection(TABLE_NAME).where(u'list_id', '==', list_id).stream()
         #query_response = query_dynamodb(list_id, limit=limit, last_word_token=last_word_token, audio_file_key_check=audio_file_key_check)
     except Exception as e:
         print(f"Error: Firestore query for word list failed.")
@@ -30,7 +30,8 @@ def format_word_list(query_response):
     word_list = []
 
     # Reformat item['Word'] contents to lower caps/underscores?
-    for item in query_response:
+    for doc in query_response:
+        item=doc.to_dict()
         word_list.append(
             {
                 "list_id": item['list_id'],

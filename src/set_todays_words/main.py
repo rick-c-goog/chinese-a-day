@@ -61,7 +61,7 @@ def store_words(todays_words):
 
         word_body = word_item['word']
         # TODO: move removing 'WORD#' on word_id into the list_word_service
-        word_body['Word id'] = word_item['word_id'].split('#')[1]
+        #word_body['Word id'] = word_item['word_id'].split('#')[1]
 
         try:
             data = {
