@@ -11,9 +11,10 @@ from shared import vocab_list_service
 
 #eventbridge = boto3.client('events')
 #table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
-firestore = firestore_v1.Client()
+PROJECT_ID=os.environ['PROJECT_ID']
 publisher = pubsub_v1.PublisherClient()
-
+firestore = firestore_v1.Client()
+TABLE_NAME = "daily_words"
 def function_handler(event, context):
 
     # Select a random word for each level
@@ -28,7 +29,8 @@ def function_handler(event, context):
 
     try:
         # Send EventBridge event
-        send_event(todays_words)
+        #send_event(todays_words)
+        publish_event(todays_words)
     except Exception as e:
         print(e)
 
@@ -62,46 +64,21 @@ def store_words(todays_words):
         word_body['Word id'] = word_item['word_id'].split('#')[1]
 
         try:
-            response = table.put_item(
-                Item={
-                    'PK': 'LIST#' + list_id,
-                    'SK': 'DATESENT#' + date,
-                    'Word': word_body,
-                    'GSI1PK': 'DATESENT#' + date,
-                    'GSI1SK': 'LIST#' + list_id
-                }
-            )
+            data = {
+                    u'list_id': list_id,
+                    u'date': date,
+                    u'Word': word_body,
+                    #u'GSI1PK': 'DATESENT#' + date,
+                    #u'GSI1SK': 'LIST#' + list_id
+            }
+            firestore.collection(TABLE_NAME).document().set(data)
             print('stored word: ', word_body)
         except Exception as e:
             print('Error: Failed to store todays word: ', word_body)
-            print('DynamoDB response: ', response)
+            #print('DynamoDB response: ', response)
             print(e)
 
-def publish_event(topic_name, event_type, event_context):
-    topic_path = publisher.topic_path(GCP_PROJECT, topic_name)
-    request = {
-        'event_type': event_type,
-        'created_time': str(int(time.time())),
-        'event_context': event_context
-    }
-    data = json.dumps(request).encode()
+def publish_event(todays_words):
+    topic_path = publisher.topic_path(PROJECT_ID,PROJECT_ID+"-daily-words" )
+    data = json.dumps(todays_words).encode()
     publisher.publish(topic_path, data)
-
-def send_event(todays_words):
-
-    response = eventbridge.put_events(
-        Entries=[
-            {
-                'Source': 'vocab-app',
-                'DetailType': 'todays-words-set',
-                'Detail': json.dumps({
-                    'idempotency-key': str(ksuid_service.generate_ksuid())
-                    # 'todays-words': todays_words
-                    }),
-                'EventBusName': os.environ['EVENT_BUS_NAME']
-            }
-        ]
-    )
-
-    print('Put events response: ', response)
-    return response

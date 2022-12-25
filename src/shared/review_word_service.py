@@ -1,16 +1,18 @@
 import os
 import json
-import boto3
+#import boto3
+from google.cloud import firestore_v1
 from datetime import datetime
 from datetime import timedelta
 from dataclasses import asdict
 from collections import defaultdict
 from models import ReviewWord, Word
-from boto3.dynamodb.conditions import Key
+#from boto3.dynamodb.conditions import Key
 
 import vocab_list_service
-
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+firestore = firestore_v1.Client()
+TABLE_NAME = "daily_words"
+#table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 all_lists = vocab_list_service.get_vocab_lists()
 
@@ -38,16 +40,17 @@ def get_review_words(list_id, date_range):
 def query_dynamodb(list_id, todays_date, from_date):
 
     try:
-        response = table.query(
-            KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
-        )
+       query_ref = firestore.collection(TABLE_NAME).where("list_id", "==", list_id).where('date','>=',from_date).where('date','<',todays_date).stream() 
+       #response = table.query(
+       #     KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
+       # )
     except Exception as e:
         print(e.response['Error']['Message'])
         raise e
     # else:
         # print("dynamo query response: ", json.dumps(response['Items'], indent=4))
     
-    return response['Items']
+    return query_ref
 
 def format_review_word(query_response_word):
     # print('query response word', query_response_word)
@@ -63,8 +66,8 @@ def format_review_word(query_response_word):
     )
 
     review_word = ReviewWord(
-        list_id = query_response_word['PK'].split('#')[1],
-        date_sent = query_response_word['SK'].split('#')[1],
+        list_id = query_response_word['list_id'],
+        date_sent = query_response_word['date'],
         word = word_body
     )
 

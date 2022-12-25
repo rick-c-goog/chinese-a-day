@@ -1,13 +1,14 @@
 import csv
 
 #import firebase_admin
-from google.cloud import firestore
+from google.cloud import firestore_v1
+from datetime import datetime
 #from firebase_admin import credentials, firestore
 
 #cred = credentials.Certificate("./ServiceAccountKey.json")
 #app = firebase_admin.initialize_app(cred)
 
-store = firestore.client()
+store = firestore_v1.Client()
 
 file_path = "hsk_vocab.csv"
 collection_name = "vocabulary"
@@ -41,7 +42,12 @@ for batched_data in batch_data(data, 499):
     batch = store.batch()
     for data_item in batched_data:
         doc_ref = store.collection(collection_name).document()
-        batch.set(doc_ref, data_item)
+        date = str(datetime.today().strftime('%Y-%m-%d'))
+        word = {
+                    u'list_id': data_item['HSK Level'],
+                    u'Word': data_item
+            }
+        batch.set(doc_ref,word)
     batch.commit()
 
 print('Done')
